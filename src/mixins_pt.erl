@@ -8,7 +8,9 @@
 %%%-------------------------------------------------------------------
 
 -module (mixins_pt).
+-author ("Damian T. Dobroczy\\\\'nski <qoocku@gmail.com>").
 -export ([parse_transform/2]).
+-include ("vsn").
 
 -include_lib ("eunit/include/eunit.hrl").
 
@@ -106,12 +108,16 @@ concatenate_modules_with_params (Mixins, MyParams) ->
                         end, {[], MyParams}, Mixins),
   lists:reverse(Xs).
 
+-define (UNDEF_ERROR, error("Cannot get module_info from a mixin - try to add path to it while compiling")).
+
 is_abstract (Mod) ->
-  case proplists:get_value(abstract, Mod:module_info(attributes), [false]) of
+  try proplists:get_value(abstract, Mod:module_info(attributes), [false]) of
     [true] ->
       true;
     [false] ->
       false
+  catch
+    error:undef -> ?UNDEF_ERROR
   end.
 
 insert_one_mixin_feature ({Mixin, ModParam}, {Acc, Exp, N}) ->
@@ -119,11 +125,15 @@ insert_one_mixin_feature ({Mixin, ModParam}, {Acc, Exp, N}) ->
                    undefined -> 0;
                    ModParam  -> -1
                  end,
-  MixinExports = sets:from_list(lists:filter(fun
-                                               ({module_info, _}) -> false;
-                                               ({instance, _}) -> false;
-                                               (_) -> true
-                                             end, Mixin:module_info(exports))),
+  MixinExports = try
+                   sets:from_list(lists:filter(fun
+                                                 ({module_info, _}) -> false;
+                                                 ({instance, _}) -> false;
+                                                 (_) -> true
+                                               end, Mixin:module_info(exports)))
+                 catch
+                   error:undef -> ?UNDEF_ERROR
+                 end,
   ToDefine     = [{F, A+ArityFix} || {F, A} <- sets:to_list(sets:subtract(MixinExports, sets:from_list(Exp)))],
   RealMixin    = case ModParam of
                    undefined -> Mixin;
