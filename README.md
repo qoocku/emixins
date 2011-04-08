@@ -26,47 +26,47 @@ Example of usage
 
 Let's say we have a "base" module `b.erl`:
 
-  -module (b).
-  -export ([f/0]).
+    -module (b).
+    -export ([f/0]).
   
-  f () -> 1.
+    f () -> 1.
   
 and another "base" module `b2.erl`:
 
-  -module (b2).
-  -export ([f2/0]).
+    -module (b2).
+    -export ([f2/0]).
   
-  f2 () -> 2.
+    f2 () -> 2.
   
 The target module is called `t.erl`:
 
-  -module (t).
-  -compile ([{parse_transform, mixins_pt}]).
-  -mixins ([b]).
+    -module (t).
+    -compile ([{parse_transform, mixins_pt}]).
+    -mixins ([b]).
   
 Now, the `-mixins(list())` attribute defines a list of mixed-in
 modules that will participate in function calls of the `t` module.
 After compilation of the modules you should be able to call:
 
-  t:f().
+    t:f().
   
 to obtain great value of `1`. If you type:
 
-  t:module_info(exports).
+    t:module_info(exports).
   
 you should obtain something like this:
 
-  [{f, 0}, ...]
+    [{f, 0}, ...]
   
 Mixing more than one module
 ---------------------------
 
 Now, change the `t` code like this:
 
-  -mixins ([b, b2]).
+    -mixins ([b, b2]).
   
 If you look at the `t:module_info(exports)` result you can see this:
 
-  [{f, 0}, {f2, 0}, ...]
+    [{f, 0}, {f2, 0}, ...]
   
 which mean that you may safely call `f2/0` function with the `t` module.
