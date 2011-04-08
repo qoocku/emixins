@@ -10,7 +10,7 @@ the lacking function using the module mentioned in the `extends`
 attribute. It's rather, like err..., pretty cool BUT one may define
 only ONE mixin.
 
-The `emixins` application make many mixins possible BUT the drawback
+The `emixins` application makes many mixins possible BUT the drawback
 is the fact that the mixins "mixing" is done during module compilation
 using `parse_transform` mechanism. This means that:
 
