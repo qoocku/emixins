@@ -156,8 +156,7 @@ Test it:
      {x,1},
      {f,1},
      {module_info, 0},
-     {module_info, 1},
-     {module_info, 2}]
+     {module_info, 1}]
     
 Let's take a break for a while and try to summarize what we've seen
 already:
