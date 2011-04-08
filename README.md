@@ -97,7 +97,13 @@ How to use it? Look:
     1> X = p:new(10).
     2> t:x(X).
     10
- 
+
+or using `t` module which has `new/1` function already mixed-in:
+
+    1> X = t:new(10).
+    2> t:x(X).
+    10
+    
 The real fun is to mix abstract modules into an abstract module:
 
     %% Target module
