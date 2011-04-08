@@ -127,15 +127,18 @@ Now, it's time to check this guy:
     3> X:f(1).
     11
     4> X:g(1).
-    41
+    41    
 
 Ok. But what if we want to mix abstract modules altogether with
 regular ones? Just, mix them! Let's change the mixins list in the
 target module:
 
-    -mixins ([p, b, b2]).
+    -mixins ([b, p, b2]).
     
-What's the value of `module_info`?
+As you see, the regular `b` mixin is put *before* abstract `p`
+mixin. Just for fun. 
+
+Now, what's the value of `module_info`?
 
     1> t:module_info(exports).
     [... 
@@ -163,6 +166,10 @@ Test it:
      {f,1},
      {module_info, 0},
      {module_info, 1}]
+    5> X:f2().
+    2
+    6> X:f().
+    1
     
 Let's take a break for a while and try to summarize what we've seen
 already:
@@ -178,3 +185,9 @@ already:
 * the order of mixing is important if there are functions of the same
   name & arity in mixins -- this one from the last mixin on the mixins
   list will be chosen to be called.
+* the order of abstract mixins on the `-mixin(...)` list *must* be the
+  same as the order of the mixins parameters of the target abstract
+  module;
+* the order of the regular mixins "mixed" with abstract mixins is
+  irrelevant -- only the abstract mixins order matters (in case of
+  abstract target module)
