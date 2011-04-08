@@ -4,7 +4,7 @@ Introduction
 Current version of Erlang/OTP has had a rather experimental feature
 which resembles a "mixin" concept of several OO languages. The feature
 is enabled by inserting `-extends(a_mixin)` attribute into a module
-code. This feature is during run-time -- standard `error_handler`
+code. This feature is enabled during run-time -- standard `error_handler`
 module catches all cases of undefined function call and tries to call
 the lacking function using the module mentioned in the `extends`
 attribute. It's rather, like err..., pretty cool BUT one may define
