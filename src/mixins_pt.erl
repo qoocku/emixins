@@ -1,7 +1,27 @@
+%%%-------------------------------------------------------------------
+%%% @author Damian T. Dobroczy\\'nski <qoocku@gmail.com>
+%%% @copyright (C) 2011, Damian T. Dobroczy\\'nski
+%%% @doc Mixins Parse Transform.
+%%%
+%%% @since 2011-04-08
+%%% @end
+%%%-------------------------------------------------------------------
+
 -module (mixins_pt).
 -export ([parse_transform/2]).
 
 -include_lib ("eunit/include/eunit.hrl").
+
+%%%===================================================================
+%%% API
+%%%===================================================================
+
+%%--------------------------------------------------------------------
+%% @doc Standard `parse_transform' function which compiles into the
+%%      Erlang forms all uncommon exports from mixins given in
+%%      `-mixin([atom()])' attribute.
+%% @end
+%%--------------------------------------------------------------------
 
 parse_transform (Forms, _Options) ->
   % search for "mixins" attribute
@@ -11,6 +31,10 @@ parse_transform (Forms, _Options) ->
     Mixins ->
       insert_exports(insert_mixins_features(Forms, Mixins))
   end.
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
 
 find_mixins_attr (Forms) ->
   case lists:keysearch(mixins, 3, Forms) of
@@ -39,7 +63,7 @@ insert_exports ({Exports, Forms}) ->
       Before ++ [{attribute, N1, export, Exports}] ++ After;
     ThisExports ->
       lists:keyreplace(export, 3, Forms,
-                       {attribute, N, export, ThisExports ++ Exports})
+                       {attribute, N, export, Exports})
   end.
   
 goto_last_line (Forms) ->
@@ -51,10 +75,9 @@ generate_mixins_features (Forms, Mixins, StartLine) ->
   ModParams     = get_module_params(Forms),
   Mixins1       = concatenate_modules_with_params(Mixins, ModParams),
   {Lst, Exp, _} = lists:foldl(fun (Mixin, Acc) ->
-                                  insert_one_mixin_feature(Exports, Mixin, Acc)
-                              end, {[], [], StartLine}, Mixins1),
-  {lists:reverse(lists:flatten(Exp)), 
-   lists:reverse(lists:flatten(Lst))}.
+                                  insert_one_mixin_feature(Mixin, Acc)
+                              end, {[], Exports, StartLine}, Mixins1),
+  {Exp, lists:reverse(lists:flatten(Lst))}.
 
 get_exports (Forms) ->
   case lists:keysearch(export, 3, Forms) of
@@ -91,7 +114,7 @@ is_abstract (Mod) ->
       false
   end.
 
-insert_one_mixin_feature (Exports, {Mixin, ModParam}, {Acc, Exp, N}) ->
+insert_one_mixin_feature ({Mixin, ModParam}, {Acc, Exp, N}) ->
   ArityFix     = case ModParam of
                    undefined -> 0;
                    ModParam  -> -1
@@ -101,7 +124,7 @@ insert_one_mixin_feature (Exports, {Mixin, ModParam}, {Acc, Exp, N}) ->
                                                ({instance, _}) -> false;
                                                (_) -> true
                                              end, Mixin:module_info(exports))),
-  ToDefine     = [{F, A+ArityFix} || {F, A} <- sets:to_list(sets:subtract(MixinExports, sets:from_list(Exports)))],
+  ToDefine     = [{F, A+ArityFix} || {F, A} <- sets:to_list(sets:subtract(MixinExports, sets:from_list(Exp)))],
   RealMixin    = case ModParam of
                    undefined -> Mixin;
                    ModParam  -> ModParam
@@ -110,9 +133,10 @@ insert_one_mixin_feature (Exports, {Mixin, ModParam}, {Acc, Exp, N}) ->
                                  Source          = generate_mixin_source(RealMixin, Fun, Arity),
                                  {ok, Tokens, _} = erl_scan:string(Source, N),
                                  {ok, Forms}     = erl_parse:parse_form(Tokens),
-                                 [Forms | Acc0]
+                                 Inlining        = {attribute, N+1, compile, [{inline, [{Fun, Arity}]}]},
+                                 [Forms, Inlining | Acc0]
                              end, [], ToDefine),
-  {[Forms | Acc], [ToDefine|Exp], N+1}.
+  {[Forms | Acc], ToDefine ++ Exp, N+2}.
 
 generate_mixin_source (Mod, Fun, Arity) ->
   Head = io_lib:format("~s(", [Fun]),
