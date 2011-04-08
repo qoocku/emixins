@@ -1,0 +1,3 @@
+-module (t2).
+-compile ([{parse_transform, mixins_pt}]).
+-mixins ([p]).

@@ -3,14 +3,13 @@
 
 -include_lib ("eunit/include/eunit.hrl").
 
-parse_transform (Forms, Options) ->
-  io:format("~p~n~p~n", [Forms, Options]),
+parse_transform (Forms, _Options) ->
   % search for "mixins" attribute
   case find_mixins_attr(Forms) of
     [] ->
       Forms;
     Mixins ->
-      ?debugVal(insert_exports(insert_mixins_features(Forms, Mixins)))
+      insert_exports(insert_mixins_features(Forms, Mixins))
   end.
 
 find_mixins_attr (Forms) ->
@@ -27,8 +26,21 @@ insert_mixins_features (Forms, Mixins) ->
 
 insert_exports ({Exports, Forms}) ->
   {N, ThisExports} = get_exports(Forms),
-  lists:keyreplace(export, 3, Forms,
-                   {attribute, N, export, ThisExports ++ Exports}).
+  case ThisExports of
+    [] -> 
+      % the target module does not exports anything by itself,
+      % so insert mixed-in exports just after the `-module' attribute
+      {value,
+       {attribute, N1, module, _}} = lists:keysearch(module, 3, Forms),
+      {Before, After}              = lists:partition(fun 
+                                                       ({attribute, _, module, _}) -> true;
+                                                       (_) -> false
+                                                     end, Forms),
+      Before ++ [{attribute, N1, export, Exports}] ++ After;
+    ThisExports ->
+      lists:keyreplace(export, 3, Forms,
+                       {attribute, N, export, ThisExports ++ Exports})
+  end.
   
 goto_last_line (Forms) ->
   [{eof, N} | Head] = lists:reverse(Forms),
@@ -87,7 +99,6 @@ insert_one_mixin_feature (Exports, {Mixin, ModParam}, {Acc, Exp, N}) ->
   MixinExports = sets:from_list(lists:filter(fun
                                                ({module_info, _}) -> false;
                                                ({instance, _}) -> false;
-                                               ({new, _}) -> false;
                                                (_) -> true
                                              end, Mixin:module_info(exports))),
   ToDefine     = [{F, A+ArityFix} || {F, A} <- sets:to_list(sets:subtract(MixinExports, sets:from_list(Exports)))],
@@ -101,7 +112,7 @@ insert_one_mixin_feature (Exports, {Mixin, ModParam}, {Acc, Exp, N}) ->
                                  {ok, Forms}     = erl_parse:parse_form(Tokens),
                                  [Forms | Acc0]
                              end, [], ToDefine),
-  {[Forms | Acc], [?debugVal(ToDefine)|Exp], N+1}.
+  {[Forms | Acc], [ToDefine|Exp], N+1}.
 
 generate_mixin_source (Mod, Fun, Arity) ->
   Head = io_lib:format("~s(", [Fun]),
