@@ -231,7 +231,7 @@ insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
                                               ({module_info, _}) -> false;
                                               ({instance, _})    -> false;
                                               (_)                -> true
-                                            end, MixinImports),
+                                            end, MixinImports)),
 
   %% create a list of final exports
 
