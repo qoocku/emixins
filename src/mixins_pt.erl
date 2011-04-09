@@ -54,8 +54,8 @@ insert_exports ({Exports, Forms}) ->
   {N, ThisExports} = get_exports(Forms),
   case ThisExports of
     [] -> 
-      % the target module does not exports anything by itself,
-      % so insert mixed-in exports just after the `-module' attribute
+      %% the target module does not exports anything by itself,
+      %% so insert mixed-in exports just after the `-module' attribute
       {value,
        {attribute, N1, module, _}} = lists:keysearch(module, 3, Forms),
       {Before, After}              = lists:partition(fun 
@@ -108,7 +108,8 @@ concatenate_modules_with_params (Mixins, MyParams) ->
                         end, {[], MyParams}, Mixins),
   lists:reverse(Xs).
 
--define (UNDEF_ERROR, error("Cannot get module_info from a mixin - try to add path to it while compiling")).
+-define (UNDEF_ERROR, error("Cannot get module_info from a mixin -"
+                            " try to add path to it while compiling")).
 
 is_abstract (Mod) ->
   try proplists:get_value(abstract, Mod:module_info(attributes), [false]) of
@@ -120,25 +121,51 @@ is_abstract (Mod) ->
     error:undef -> ?UNDEF_ERROR
   end.
 
-insert_one_mixin_feature ({Mixin, ModParam}, {Acc, Exp, N}) ->
+insert_one_mixin_feature ({Mod, ModParam}, Accumulator) when is_atom(Mod) ->
+  insert_one_mixin_feature({{Mod, []}, ModParam}, Accumulator);
+insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
   ArityFix     = case ModParam of
                    undefined -> 0;
                    ModParam  -> -1
                  end,
-  MixinExports = try
-                   sets:from_list(lists:filter(fun
-                                                 ({module_info, _}) -> false;
-                                                 ({instance, _}) -> false;
-                                                 (_) -> true
-                                               end, Mixin:module_info(exports)))
-                 catch
-                   error:undef -> ?UNDEF_ERROR
+
+  %% e should figure out what exatctly has to be mixed-in.
+  %% we do not want to "inherit" some compiler generated
+  %% functions.
+
+  MixinExports = case Imports of
+                   [] -> try % implicit imports
+                           sets:from_list(lists:filter(fun
+                                                         ({module_info, _}) -> false;
+                                                         ({instance, _}) -> false;
+                                                         (_) -> true
+                                                       end, Mod:module_info(exports)))
+                         catch
+                           error:undef -> ?UNDEF_ERROR % obviously `module_info/1' is not available
+                         end;
+                   Imports ->
+                     sets:from_list(Imports) % explicit imports
                  end,
-  ToDefine     = [{F, A+ArityFix} || {F, A} <- sets:to_list(sets:subtract(MixinExports, sets:from_list(Exp)))],
+
+  %% create a list of final exports
+
+  ToDefine     = [{F, A+ArityFix}
+                  || {F, A} <- sets:to_list(lists:foldl(fun(Set0, Set) ->
+                                                            sets:subtract(Set, Set0)
+                                                        end, MixinExports,
+                                                        [sets:from_list(Exp)]))],
+
+  %% if a abstract module parameter has been linked to the mixed-in module
+  %% it should be used in the mixed-in function call. If not - use the mixed-in 
+  %% module name.
+  
   RealMixin    = case ModParam of
-                   undefined -> Mixin;
+                   undefined -> Mod;
                    ModParam  -> ModParam
                  end,
+
+  %% mixins code generation
+
   Forms        = lists:foldl(fun ({Fun, Arity}, Acc0) ->
                                  Source          = generate_mixin_source(RealMixin, Fun, Arity),
                                  {ok, Tokens, _} = erl_scan:string(Source, N),
