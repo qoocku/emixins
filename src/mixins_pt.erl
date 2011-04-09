@@ -192,10 +192,10 @@ insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
 
   ArityFix     = case ModParam of
                    undefined -> 0;
-                   ModParam  -> -1
+                   ModParam  -> 1
                  end,
 
-  %% select what imports from a mixin are
+  %% select imports from a mixin
 
   MixinExports = try
                    Mod:module_info(exports)
@@ -231,11 +231,11 @@ insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
                                               ({module_info, _}) -> false;
                                               ({instance, _})    -> false;
                                               (_)                -> true
-                                            end, MixinImports)),
+                                            end, MixinImports),
 
   %% create a list of final exports
 
-  ToDefine     = [{F, A+ArityFix}
+  ToDefine     = [{F, A-ArityFix}
                   || {F, A} <- sets:to_list(lists:foldl(fun(Set0, Set) ->
                                                             sets:subtract(Set, Set0)
                                                         end, RealImports,
