@@ -173,7 +173,7 @@ is_abstract (Mod) ->
 %%      The `List' contains atoms for mixed-in modules and/or a pair 
 %%      `{Module::atom(), [Fun/Arity]}' which specifies explicit imports
 %%      from the mixed-in module `Mod'. In both cases the unnecessary imports
-%%      are eliminated (which are compiler generate special functions like
+%%      are eliminated (which are compiler generated special functions like
 %%      `instance(...)' or `module_info(...)' and all functions already exported
 %%      from the target module with the name and arity like in the mixin imports). 
 
