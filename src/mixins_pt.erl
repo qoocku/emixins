@@ -197,14 +197,30 @@ insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
 
   %% select what imports from a mixin are
 
+  MixinExports = try
+                   Mod:module_info(exports)
+                 catch
+                   error:undef -> ?UNDEF_ERROR % obviously `module_info/1' is not available
+                 end,
+
   MixinImports = case Imports of
-                   [] -> try % implicit imports
-                           Mod:module_info(exports)
-                         catch
-                           error:undef -> ?UNDEF_ERROR % obviously `module_info/1' is not available
-                         end;
+                   [] -> 
+                     %% implicit imports
+                     MixinExports;
                    Imports ->
-                     sets:from_list(Imports) % explicit imports
+                     %% explicit imports without unknown functions
+                     case lists:partition(fun (ExpImp) ->
+                                              not lists:member(ExpImp, MixinExports)
+                                          end, Imports) of
+                       {[], _} ->
+                         Imports;
+                       {Lst, Imports1} ->
+                         io:format("*** " ?MODULE_STRING ": Some functions are not"
+                                   " exported from '~p' module:~n"
+                                   "~s~n", [Mod, lists:flatten([io_lib:format("\t~p/~p~n", [F,A]) 
+                                                                || {F,A} <- Lst])]),
+                         Imports1
+                     end
                  end,
 
   %% we should figure out what exatctly has to be mixed-in.
