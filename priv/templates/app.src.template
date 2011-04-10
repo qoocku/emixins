@@ -1,0 +1,6 @@
+{variables, [{appid, "app"},
+             {vsn, "0.1.0"},
+             {description, "Unknown Erlang Application"},
+             {modules, ""}]}.
+{template, "app.src", "src/{{appid}}.app.src"}.
+

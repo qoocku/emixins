@@ -1,12 +1,12 @@
-{application, emixins,
+{application, {{appid}},
  [
-  {description, "Erlang Mixins Enabler"},
+  {description, "{{description}}"},
   {vsn, "{{vsn}}"},
   {registered, []},
   {applications, [
                   kernel,
                   stdlib
                  ]},
-  {modules, [mixins_pt]},
+  {modules, [{{modules}}]},
   {env, []}
  ]}.

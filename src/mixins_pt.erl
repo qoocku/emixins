@@ -279,5 +279,6 @@ generate_mixin_source (Mod, Fun, Arity) ->
   Head = io_lib:format("~s(", [Fun]),
   Args = string:join([io_lib:format("A~p", [I]) || I <- lists:seq(1, Arity)], ","),
   Tail = io_lib:format(") -> ~s:~s(~s).", [Mod, Fun, Args]),
-  lists:flatten([Head, Args, Tail]).
+  lists:flatten([Head, Args, Tail]).  
+
   
