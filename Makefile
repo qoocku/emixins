@@ -18,7 +18,7 @@ EDITOR   = vim
 warnings += warn-editor
 endif
 
-app-id            = ${call get-var,app.appid}
+app-id            = ${shell ${call var-get,app.appid}}
 app-config        = ${filter-out priv/config/app/-%,${wildcard priv/config/app/*}}
 app-config-vars   = ${foreach v,appid description modules vsn,priv/config/app/$(v)}
 module-files      = ${wildcard src/*.erl}
@@ -27,29 +27,29 @@ effective-modules = ${filter-out ${shell cat priv/config/app/-modules},$(modules
 overlay-vars      = ${foreach v,$(app-config), ${notdir $(v)}="${shell cat $(v)}"} modules="${shell cat priv/config/app/modules}"
 
 ifneq ("$(del-var)","")
-override .DEFAULT_GOAL := del-var
+	override .DEFAULT_GOAL := del-var
 else
-ifneq ("$(get-var)","")
-override .DEFAULT_GOAL := get-var
-else
-ifneq ("$(edit-var)","")
-override .DEFAULT_GOAL := edit-var
-else
-ifneq ("$(app.appid)","")
-var-to-set  = app.appid
-else
-ifneq ("$(app.vsn)","")
-var-to-set = app.vsn
-else
-ifneq ("$(app.description)","")
-var-to-set  = app.description
-else
-what-to-set = dont-know-what-to-set
-endif
-endif
-endif
-endif
-endif
+	ifneq ("$(get-var)","")
+		override .DEFAULT_GOAL := get-var
+	else
+		ifneq ("$(edit-var)","")
+			override .DEFAULT_GOAL := edit-var
+		else
+			ifneq ("$(app.appid)","")
+				var-to-set  = app.appid
+			else
+				ifneq ("$(app.vsn)","")
+					var-to-set = app.vsn
+				else
+					ifneq ("$(app.description)","")
+						var-to-set  = app.description
+					else
+						what-to-set = dont-know-what-to-set
+					endif
+				endif
+			endif
+		endif
+	endif
 endif
 
 ## --- debug helpers & macros --
