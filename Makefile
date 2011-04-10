@@ -66,6 +66,18 @@ endif
 
 all: priv/config/app/appid src/$(app-id).app.src src/vsn $(dbg) compile test doc
 
+help:
+	@echo Generic Rebar-friendly Makefile ; \
+	echo Usage: make [TARGET] [VAR=\<value\>] ; \
+	echo  ; \
+	echo TARGET is: ; \
+	echo \\tset-var VAR=\<value\>\\t-- sets a config variable VAR to value \<value\> ; \
+	echo \\t\\tVAR may be: app.appid, app.description, app.vsn ; \
+	echo \\tcompile\\t\\t\\t-- rebar compile ; \
+	echo \\tdoc\\t\\t\\t-- rebar doc ; \
+	echo \\ttest\\t\\t\\t-- rebar eunit \; rebar ct ; \
+	echo \\n\'make\' without any target and parameter is equivalent to do compile, test and doc.
+
 compile: src/vsn
 	@./rebar compile
 
