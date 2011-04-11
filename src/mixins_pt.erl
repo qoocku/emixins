@@ -149,7 +149,8 @@ concatenate_modules_with_params (Mixins, MyParams) ->
                         end, {[], MyParams}, Mixins),
   lists:reverse(Xs).
 
--define (UNDEF_ERROR, error("Cannot get module_info from a mixin -"
+-define (UNDEF_ERROR(M), error("Cannot get module_info from " ++
+                                 atom_to_list(M) ++ " mixin -"
                             " try to add path to it while compiling")).
 
 %% @doc Tests if a module `Mod' is an abstract one.
@@ -165,7 +166,7 @@ is_abstract (Mod) ->
     [false] ->
       false
   catch
-    error:undef -> ?UNDEF_ERROR
+    error:undef -> ?UNDEF_ERROR(Mod)
   end.
 
 %% @doc Insert forms for one mixin into the forms accumulator.
@@ -200,7 +201,7 @@ insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
   MixinExports = try
                    Mod:module_info(exports)
                  catch
-                   error:undef -> ?UNDEF_ERROR % obviously `module_info/1' is not available
+                   error:undef -> ?UNDEF_ERROR(Mod) % obviously `module_info/1' is not available
                  end,
 
   MixinImports = case Imports of
