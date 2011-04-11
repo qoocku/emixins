@@ -52,6 +52,32 @@ else
 	endif
 endif
 
+## --- get the arguments for eunit if any
+
+ifneq ($(eunit),)
+	test-types := eunit
+	ifeq ($(eunit),true)
+		eunit-suite := 
+  else
+		eunit-suite := "suite=$(eunit)"
+  endif
+	sbt-args := "eunit=$(eunit)"
+endif
+
+## --- get the arguments for common_test server if any
+
+ifneq ($(ct),)
+	test-types += ct
+	ifeq ($(ct),true)
+		ct-suite :=
+  else
+		ct-suite := "suite=$(ct)"
+  endif
+	sbt-args += "ct=$(ct)"
+endif
+
+sbt-args := test $(sbt-args)
+
 ## --- debug helpers & macros --
 
 ifeq ("$(dbg)","true")
@@ -81,13 +107,13 @@ help:
 compile: src/vsn
 	@./rebar compile
 
-test: eunit ct
+test: src/vsn $(test-types)
 
 eunit:
-	@./rebar eunit
+	@./rebar eunit $(eunit-suite)
 
 ct:
-	@./rebar ct
+	@./rebar ct $(ct-suite)
 
 doc: src/vsn
 	@./rebar doc
@@ -120,6 +146,9 @@ get-var:
 
 edit-var: $(warnings)
 	@${call var-edit,$(edit-var)}
+
+sbt:
+	@priv/fmon.sh --command make --args "$(sbt-args)" --files Makefile rebar.config src include test
 
 ## --- warning phony targets ---
 
