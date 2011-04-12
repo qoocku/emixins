@@ -204,6 +204,15 @@ insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
                    error:undef -> ?UNDEF_ERROR(Mod) % obviously `module_info/1' is not available
                  end,
 
+  %% detect exclusions from imports
+
+  XImports     = case Imports of
+                   {exclude, ToExclude} when is_list(ToExclude) ->
+                     MixinExports -- ToExclude;
+                   Imports ->
+                     Imports
+                 end,
+
   MixinImports = case Imports of
                    [] -> 
                      %% implicit imports
