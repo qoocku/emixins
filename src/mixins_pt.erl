@@ -213,17 +213,17 @@ insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
                      Imports
                  end,
 
-  MixinImports = case Imports of
+  MixinImports = case XImports of
                    [] -> 
                      %% implicit imports
                      MixinExports;
-                   Imports ->
+                   XImports ->
                      %% explicit imports without unknown functions
                      case lists:partition(fun (ExpImp) ->
                                               not lists:member(ExpImp, MixinExports)
-                                          end, Imports) of
+                                          end, XImports) of
                        {[], _} ->
-                         Imports;
+                         XImports;
                        {Lst, Imports1} ->
                          io:format("*** " ?MODULE_STRING ": Some functions are not"
                                    " exported from '~p' module:~n"
