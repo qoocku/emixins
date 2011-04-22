@@ -171,6 +171,18 @@ Test it:
     6> X:f().
     1
     
+Excluding from mixing
+---------------------
+
+Sometimes it's necessary to exclude a function from a mixin (for example, I've run
+into this mixing a ebmachine resource module which originally included `webmachine.hrl` which
+in turn defined and exported `init/1` function). This is possible using this `mixins` attribute
+form:
+
+    -mixins([{a_module, {exclude, [F/A, ...]}}]).
+
+This tells the parser to mix everything but the functions listed after `exclude` atom.
+
 Let's take a break for a while and try to summarize what we've seen
 already:
 

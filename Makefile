@@ -1,3 +1,4 @@
+### -*- tab-width: 2 -*-
 ### ===========================================================================
 ### @doc Rebar Makefile Helper & Enhancmenter
 ### @author Damian T. Dobroczy\\'nski <qoocku@gmail.com>
@@ -90,7 +91,7 @@ endif
 
 .PHONY: all get-var del-var edit-var
 
-all: priv/config/app/appid src/$(app-id).app.src src/vsn $(dbg) compile test doc
+all: priv/config/app/appid src/vsn src/$(app-id).app.src $(dbg) compile test doc
 
 help:
 	@echo Generic Rebar-friendly Makefile ; \
@@ -124,11 +125,11 @@ dont-know-what-to-set:
 set-version: priv/config/app/appid priv/config/app/vsn
 	@rm -f ebin/$(app-id).app ; rm -f src/$(app-id).app.src
 	@if [ "$(app.vsn)" != "" ] ; then \
-		./rebar create template=vsn template_dir=priv/templates force=1 vsn='$(app.vsn)'; \
+		./rebar create template=vsn template_dir=priv/templates force=1 skip_deps=true vsn='$(app.vsn)'; \
 		echo "$(app.vsn)" > priv/config/app/vsn ; \
 	else \
 		if [ -d priv/config/app ] ; then \
-			./rebar create template=vsn template_dir=priv/templates force=1 $(overlay-vars) ; \
+			./rebar create template=vsn template_dir=priv/templates force=1 skip_deps=true $(overlay-vars) ; \
 		else \
 			echo "need 'vsn' parameter or 'priv/config/app/vsn' file with 'vsn' value set."; \
 			exit 1; \
