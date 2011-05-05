@@ -245,11 +245,13 @@ insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
 
   %% create a list of final exports
 
-  ToDefine     = [{F, A-ArityFix}
-                  || {F, A} <- sets:to_list(lists:foldl(fun(Set0, Set) ->
-                                                            sets:subtract(Set, Set0)
-                                                        end, RealImports,
-                                                        [sets:from_list(Exp)]))],
+  ToDefine     = [case F of
+                    new -> {F, A};
+                    F   -> {F, A+ArityFix}
+                  end || {F, A} <- sets:to_list(lists:foldl(fun(Set0, Set) ->
+                                                                sets:subtract(Set, Set0)
+                                                            end, RealImports,
+                                                            [sets:from_list(Exp)]))],
 
   %% if a abstract module parameter has been linked to the mixed-in module
   %% it should be used in the mixed-in function call. If not - use the mixed-in 
