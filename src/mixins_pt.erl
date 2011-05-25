@@ -71,7 +71,7 @@ insert_mixins_features (Forms, Mixins) ->
 -spec insert_exports ({[fa()], list()}) -> list().
 
 insert_exports ({Exports, Forms}) ->
-  {N, ThisExports} = get_exports(Forms),
+  {_N, ThisExports} = get_exports(Forms),
   case ThisExports of
     [] -> 
       %% the target module does not exports anything by itself,
@@ -84,8 +84,12 @@ insert_exports ({Exports, Forms}) ->
                                                      end, Forms),
       Before ++ [{attribute, N1, export, Exports}] ++ After;
     ThisExports ->
-      lists:keyreplace(export, 3, Forms,
-                       {attribute, N, export, Exports})
+      %% delete the exisiting 'export' attributes and insert new one
+      NewForms = lists:filter(fun 
+                                ({attribute, _, export, _}) -> false;
+                                (_) -> true
+                              end, Forms),
+      insert_exports({Exports, NewForms})
   end.
   
 %% @doc Strip the forms off the `eof' and returns the stripped forms and the source code
@@ -111,11 +115,16 @@ generate_mixins_features (Forms, Mixins, StartLine) ->
 %% @doc Extracts from a module forms all of the explicit exports.
 
 get_exports (Forms) ->
-  case lists:keysearch(export, 3, Forms) of
-    {value, {attribute, N, export, Exports}} ->
-      {N, Exports};
-    false ->
-      {-1, []}
+  Es = lists:filter(fun 
+                      ({attribute, _, export, _}) -> true;
+                      (_) -> false
+                    end, Forms),
+  case Es of
+    [] ->
+      {-1, []};
+    Es ->
+      {attribute, N, export, _} = hd(Es),
+      {N, lists:flatten([E || {attribute, _, export, E} <- Es])}
   end.
 
 %% @doc Returns an abstract module parameters list given its forms.
@@ -187,14 +196,11 @@ is_abstract (Mod) ->
 insert_one_mixin_feature ({Mod, ModParam}, Accumulator) when is_atom(Mod) ->
   insert_one_mixin_feature({{Mod, []}, ModParam}, Accumulator);
 insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
-
-  %% arity fix defines an integer which should be added to the
-  %% target module exports specs in case of abstract mixin
-
-  ArityFix     = case ModParam of
-                   undefined -> 0;
-                   ModParam  -> 1
-                 end,
+  MixinIsAbstract = case proplists:get_value(abstract, Mod:module_info(attributes)) of
+                      [true] -> true;
+                      _      -> false
+                    end,
+  ModIsAbstract   = case ModParam of undefined -> false; _ -> true end,
 
   %% select imports from a mixin
 
@@ -208,7 +214,11 @@ insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
 
   XImports     = case Imports of
                    {exclude, ToExclude} when is_list(ToExclude) ->
-                     MixinExports -- ToExclude;
+                     MixinExports -- [case {F, MixinIsAbstract, ModIsAbstract} of
+                                        {new, _, _}      -> {F, A};
+                                        {_, true,  _}    -> {F, A+1};
+                                        {_, false, true} -> {F, A}
+                                      end || {F, A} <- ToExclude];
                    Imports ->
                      Imports
                  end,
@@ -237,20 +247,22 @@ insert_one_mixin_feature ({_Mixin = {Mod, Imports}, ModParam}, {Acc, Exp, N}) ->
   %% we do not want to "inherit" some compiler generated
   %% functions.
 
-  RealImports = sets:from_list(lists:filter(fun
-                                              ({module_info, _}) -> false;
-                                              ({instance, _})    -> false;
-                                              (_)                -> true
-                                            end, MixinImports)),
+  RealImports = sets:from_list([case {F, MixinIsAbstract, ModIsAbstract} of
+                                  {new, _, _} -> {F, A};
+                                  {_, false, false} -> {F, A};
+                                  {_, false, true} -> {F, A};
+                                  {_, true, false} -> {F, A+1};
+                                  {_, true, true} -> {F, A-1}
+                                end || {F, A} <- lists:filter(fun
+                                                                ({module_info, _}) -> false;
+                                                                ({instance, _})    -> false;
+                                                                (_)                -> true
+                                                              end, MixinImports)]),
 
   %% create a list of final exports
 
-  ToDefine     = [{F, A-ArityFix}
-                  || {F, A} <- sets:to_list(lists:foldl(fun(Set0, Set) ->
-                                                            sets:subtract(Set, Set0)
-                                                        end, RealImports,
-                                                        [sets:from_list(Exp)]))],
-
+  ToDefine     = sets:to_list(sets:subtract(RealImports, sets:from_list(Exp))),
+ 
   %% if a abstract module parameter has been linked to the mixed-in module
   %% it should be used in the mixed-in function call. If not - use the mixed-in 
   %% module name.
