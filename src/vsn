@@ -1,2 +1,2 @@
--define (VSN, "0.3.0").
+-define (VSN, "0.3.1").
 -vsn (?VSN).
