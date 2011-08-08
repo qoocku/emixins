@@ -158,7 +158,7 @@ concatenate_modules_with_params (Mixins, MyParams) ->
                         end, {[], MyParams}, Mixins),
   lists:reverse(Xs).
 
--define (UNDEF_ERROR(M), error("Cannot get module_info from " ++
+-define (UNDEF_ERROR(M), erlang:error("Cannot get module_info from " ++
                                  atom_to_list(M) ++ " mixin -"
                             " try to add path to it while compiling")).
 
